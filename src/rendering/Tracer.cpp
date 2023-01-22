@@ -1,48 +1,43 @@
 #include <optional>
 #include "Tracer.h"
+#include "../shading/BRDF.h"
 
 
-void Tracer::render(const Camera &camera, const Screen &screen, const Scene &scene, std::string fileOut) {
-    auto pixels = screen.generatePixels();
-    for (auto& pixel : pixels) {
-        auto rays = camera.generateRays(pixel);  // TODO: Use raytype DirectAndIndirect
-        for (auto& ray : rays) {
-            auto colour = this->trace(scene, ray);
-            // TODO: Find a good way to store them before averaging into the pixel.
-        }
-        // TODO: Average into the pixel AND do tone mapping.
+void Tracer::render(const Camera &camera, Screen &screen, const Scene &scene, std::string fileOut) {
+    for (auto& pixel : screen.pixels) {
+        auto rays = std::vector<Ray>();
+        camera.generateRays(screen, pixel, rays);
+        for (auto& ray : rays)
+            pixel.c = pixel.c + this->trace(scene, ray);  // Accumulate
+
+        pixel.c = 1/(double)rays.size()*pixel.c;  // Average
     }
 
+    // TODO: Tone mapping from double [0,inf[ to integer [0,255]
+    
     // TODO: Write image out to file (probably using OpenCV).
+    (void)fileOut;
 }
 
 
-Colour Tracer::trace(const Scene& scene, const Ray &r) {
-    // TODO: Find nearest hitpoint
-    double closestT = 1e99;
-    std::optional<SceneObject&> closestObject;
-    for (auto& object : scene.objects) {
-        auto newT = object.intersect(r);
-        if (newT > 0 && newT < closestT) {
-            closestT = newT;
-            closestObject = object;
-        }
-    }
-    if (!closestObject.has_value())  // TODO: Environment map should be at infinity.
-        return Colour({0,0,0});
+ContinuousColour Tracer::trace(const Scene& scene, const Ray &r) {
+    // Find object
+    HitInfo hit = scene.findClosest(r);
+    if (hit.foundObject == nullptr)  // TODO: Environment map should be at infinity.
+        return ContinuousColour({0,0,0});
 
-    Vector hitpoint = r.evaluate(closestT);
-    Vector normal   = closestObject.normal(hitpoint);
+    Vector3 hitpoint = r.evaluate(hit.t);
+    Vector3 normal   = hit.foundObject->normal(hitpoint);
 
-    // TODO: Get radiance
-    Colour totalRadiance;
+    // Get radiance
+    ContinuousColour totalRadiance;
 
-    // Collect emittance L_e.
+    // - Collect emittance L_e.
     if (r.type != RayType::Indirect) {
-
+        totalRadiance = totalRadiance + hit.foundObject->L_e(hitpoint, r.d);
     }
 
-    // Collect the integral
+    // - Collect the integral  TODO: I wonder if you evaluate the direct integral even on a Russian roulette. I think yes.
     if (r.type != RayType::Direct) {
         // BRDF = 0? Then stop (probably a light source, or a black hole).
 
@@ -53,6 +48,21 @@ Colour Tracer::trace(const Scene& scene, const Ray &r) {
         //  - Good implementation:
         //      - Direct illumination with an integral over all light surfaces with type=Direct.
         //      - Indirect illumination with a hemispheric integral with type=Indirect.
+
+        for (BRDF brdf : hit.foundObject.brdfs) {
+            auto directions = std::vector<Vector3>();
+            brdf.generateDirections(directions);
+
+            ContinuousColour newRadiance;
+            for (dir : directions) {
+                auto brdfValue = brdf.evaluate(dir);
+                auto recursiveRadiance = this->trace(scene, Ray(hitpoint, dir, Indirect));
+                newRadiance = newRadiance + brdfValue*cos(dir)*recursiveRadiance;
+            }
+            newRadiance = newRadiance/directions.size();
+
+            totalRadiance = totalRadiance + newRadiance;
+        }
     }
 
     return totalRadiance;

@@ -1,0 +1,3 @@
+TODO:
+    - Gotta normalise all your vector projections.
+    - Every object needs a list of (weight, BRDF) tuples.

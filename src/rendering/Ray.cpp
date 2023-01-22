@@ -1,9 +1,9 @@
 #include "Ray.h"
 
-Ray::Ray(const Vector &start, const Vector &dir, RayType type)
+Ray::Ray(const Vector3 &start, const Vector3 &dir, RayType type)
     : p0(start), d(dir), type(type) {}
 
 
-Vector Ray::evaluate(double t) const {
+Vector3 Ray::evaluate(double t) const {
     return this->p0 + t*this->d;
 }

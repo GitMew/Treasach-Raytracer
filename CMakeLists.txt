@@ -4,8 +4,8 @@ project(treasach)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(treasach src/main.cpp
-        src/geometry/Vector.cpp
-        src/geometry/Vector.h
+        src/geometry/Vector3.cpp
+        src/geometry/Vector3.h
         src/rendering/Ray.cpp
         src/rendering/Ray.h
         src/rendering/Camera.cpp
@@ -18,4 +18,4 @@ add_executable(treasach src/main.cpp
         src/scene/Scene.h
         src/primitives/SceneObject.h
         src/primitives/Sphere.cpp
-        src/primitives/Sphere.h)
+        src/primitives/Sphere.h src/shading/BRDF.cpp src/shading/BRDF.h src/shading/Texture.cpp src/shading/Texture.h src/shading/Material.cpp src/shading/Material.h)

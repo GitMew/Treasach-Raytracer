@@ -1,7 +1,7 @@
 #ifndef TREASACH_RAY_H
 #define TREASACH_RAY_H
 
-#include "../geometry/Vector.h"
+#include "../geometry/Vector3.h"
 
 enum RayType {
     DirectAndIndirect,  // Shot through pixels
@@ -11,13 +11,13 @@ enum RayType {
 
 class Ray {
     public:
-        Vector p0;
-        Vector d;
+        Vector3 p0;
+        Vector3 d;
         RayType type;
 
-        Ray(const Vector& start, const Vector& dir, RayType type);
+        Ray(const Vector3& start, const Vector3& dir, RayType type);
 
-        Vector evaluate(double t) const;
+        Vector3 evaluate(double t) const;
 };
 
 

@@ -3,31 +3,40 @@
 
 #include <vector>
 #include <cinttypes>
+#include "../geometry/Vector3.h"
 
-struct Colour {
-    uint8_t red   = 0;
-    uint8_t green = 0;
-    uint8_t blue  = 0;
+
+class ContinuousColour {
+    public:
+        double red   = 0;
+        double green = 0;
+        double blue  = 0;
+
+        ContinuousColour operator+(const ContinuousColour& other) const;
 };
+
+ContinuousColour operator*(double scalar, const ContinuousColour& c);
+
 
 
 struct Pixel {
     unsigned x;
     unsigned y;
 
-    Colour c;
+    ContinuousColour c;
 };
 
 
 class Screen {
     public:
-        Screen(unsigned width, unsigned height);
-
-        std::vector<Pixel> generatePixels() const;  // Should this be an iterator?
-
-    private:
+        double stride = 1;
         unsigned width;
         unsigned height;
+        std::vector<Pixel> pixels;
+
+        Screen(unsigned width, unsigned height);
+
+    private:
 };
 
 

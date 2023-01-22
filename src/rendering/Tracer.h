@@ -9,8 +9,8 @@
 
 class Tracer {
     public:
-        void render(const Camera& camera, const Screen& screen, const Scene& scene, std::string fileOut);
-        Colour trace(const Scene& scene, const Ray& r);
+        void render(const Camera& camera, Screen& screen, const Scene& scene, std::string fileOut);
+        ContinuousColour trace(const Scene& scene, const Ray& r);
 };
 
 

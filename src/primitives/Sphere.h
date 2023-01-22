@@ -6,12 +6,13 @@
 
 class Sphere : public SceneObject {
     public:
-        Vector center;
+        Vector3 center;
         double radius;
 
-        Sphere(const Vector& center, double radius);
+        Sphere(const Vector3& center, double radius);
 
-        double intersect(const Ray &ray) override;
+        double intersect(const Ray &ray) const override;
+        Vector3 normal(const Vector3 &p) const override;
 };
 
 
