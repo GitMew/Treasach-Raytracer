@@ -4,9 +4,9 @@
 #include "../geometry/Vector3.h"
 
 enum RayType {
-    DirectAndIndirect,  // Shot through pixels
-    Direct,             // Shadow rays
-    Indirect            // Hemispheric rays
+    All,           // Shot through pixels
+    OnlyEmission,  // Only retrieves L_e
+    OnlyIntegrals  // Retrieves the two integral terms (area integral of intrinsic + hemispheric integral of extrinsic)
 };
 
 class Ray {

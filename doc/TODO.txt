@@ -1,3 +1,17 @@
 TODO:
+    - Culling (if the cosine is negative, the light isn't coming from the correct side; yet, you have a problem for flat shapes, who don't have an "outside" and hence their normal is only good on one side)
+        - Also matters for a light, since cos(psi) switches signs.
+        - I think everything corrects itself if you give omega_o to .normal(), and multiply by -1 if the dot product is negative.
+    - Fix the fact that visibility in the shadow integral doesn't work.
+    - If you render too many pixels, you get a segmentation fault (stack becomes too big).
+      You need to allocate the screen on the heap, I think.
+    x Probably still gotta normalise ray directions for object intersections, because otherwise you can't properly set the
+      scale for acne.
+        > If epsilon is too small, you get acne.
+        > If epsilon is too big, you ignore close intersections that AREN'T accidental.
+        > If the ray direction isn't normalised and becomes big, non-accidental intersections have smaller t. This means epsilon "has become" too big and needs to be smaller.
+        > But lowering epsilon means more acne.
+    - Why the heck did I make a material be able to have a BRDF and an emitter? A light has no BRDFs ...
     - Gotta normalise all your vector projections.
-    - Every object needs a list of (weight, BRDF) tuples.
+    - Sky dome
+    - The lib/ folder should probably use Git submodules so that I'm not pushing a load of files for no reason.

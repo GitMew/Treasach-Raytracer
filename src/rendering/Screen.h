@@ -4,27 +4,16 @@
 #include <vector>
 #include <cinttypes>
 #include "../geometry/Vector3.h"
-
-
-class ContinuousColour {
-    public:
-        double red   = 0;
-        double green = 0;
-        double blue  = 0;
-
-        ContinuousColour operator+(const ContinuousColour& other) const;
-};
-
-ContinuousColour operator*(double scalar, const ContinuousColour& c);
-
-
+#include "../shading/Colour.h"
 
 struct Pixel {
     unsigned x;
     unsigned y;
 
-    ContinuousColour c;
+    ContinuousColour radiance;
 };
+
+std::ostream& operator<<(std::ostream& os, const Pixel& p);
 
 
 class Screen {

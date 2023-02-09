@@ -12,7 +12,8 @@ class Sphere : public SceneObject {
         Sphere(const Vector3& center, double radius);
 
         double intersect(const Ray &ray) const override;
-        Vector3 normal(const Vector3 &p) const override;
+        Vector3 outwardNormal(const Vector3 &p) const override;
+        double randomPoint(RNG& rng, Vector3& result) const override;
 };
 
 

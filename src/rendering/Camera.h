@@ -9,8 +9,12 @@
 
 struct LensProperties {
     double viewDistance;   // Distance to the view plane.
+
+    unsigned antiAliasingDensity = 1;  // The total amount of points will be this squared.
+
     double focalDistance;  // Distance to the depth-of-field focal plane.
-    double aperture;       // Radius of the lens opening wherein "primary rays" can start.
+    double aperture = 0;       // Radius of the lens opening wherein "primary rays" can start.
+    unsigned focalPointAmount = 0;
 };
 
 
@@ -24,10 +28,12 @@ class Camera {
         Vector3 viewY;
         Vector3 viewZ;
 
+        std::vector<std::pair<double,double>> intraPixelGrid;
+        std::vector<std::pair<double,double>> apertureDisk;
+
         LensProperties lens;
 
         Camera(const Vector3& eye, const Vector3& dir, LensProperties lens);
-
         void generateRays(const Screen& screen, const Pixel& pixel, std::vector<Ray>& rays) const;
 
     private:
