@@ -8,7 +8,7 @@ class SceneObject;
 
 
 /**
- * Model for L_e(p, omega). Just like the hemispheric integral can ask the Tracer for L_i, the shadow integral can ask
+ * Model for L_e(p, omega). Just like the hemispheric integral can ask the RayTracer for L_i, the shadow integral can ask
  * a light for L_e.
  */
 class EmissionFunction {

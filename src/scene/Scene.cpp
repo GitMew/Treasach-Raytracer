@@ -13,7 +13,7 @@ HitInfo Scene::findClosest(const Ray& ray) const {
 
     for (auto pointer : this->objects) {
         auto newT = pointer->intersect(ray);
-        if (INTERSECTION_TOLERANCE < newT && newT < closestT) {
+        if (!isNegativeOrAcne(newT) && newT < closestT) {  // Note: the fact that this function tests for acne does NOT mean SceneObject::intersect doesn't have to. For example, a sphere must check that its first solution isn't below the acne threshold so it knows to return its second solution.
             closestT = newT;
             closestObject = pointer;
         }

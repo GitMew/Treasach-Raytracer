@@ -8,7 +8,7 @@ FlatDisk::FlatDisk(const Vector3& centre, const Vector3& normal, double radius)
 double FlatDisk::intersect(const Ray &ray) const {
     // From flat plane
     double denominator = this->n*ray.d;
-    if (std::abs(denominator) < INTERSECTION_TOLERANCE)
+    if (isBasicallyZero(denominator))
         return -1;
     double t = (this->n*(this->centre - ray.p0))/denominator;
 

@@ -12,8 +12,8 @@ add_executable(treasach src/main.cpp
         src/rendering/Camera.h
         src/rendering/Screen.cpp
         src/rendering/Screen.h
-        src/rendering/Tracer.cpp
-        src/rendering/Tracer.h
+        src/rendering/RayTracer.cpp
+        src/rendering/RayTracer.h
         src/scene/Scene.cpp
         src/scene/Scene.h
         src/primitives/SceneObject.h
@@ -34,7 +34,7 @@ add_executable(treasach src/main.cpp
         src/shading/EmissionFunction.h
         src/geometry/SphereMath.h
         src/geometry/SphereMath.cpp
-        src/primitives/FlatDisk.cpp src/primitives/FlatDisk.h src/primitives/FlatInfinitePlane.cpp src/primitives/FlatInfinitePlane.h src/geometry/Constants.cpp src/geometry/Constants.h src/examples/Examples.h)
+        src/primitives/FlatDisk.cpp src/primitives/FlatDisk.h src/primitives/FlatInfinitePlane.cpp src/primitives/FlatInfinitePlane.h src/geometry/Constants.cpp src/geometry/Constants.h src/examples/Examples.h src/primitives/AABB.cpp src/primitives/AABB.h src/rendering/NormalTracer.cpp src/rendering/NormalTracer.h src/rendering/Tracer.h src/rendering/Tracer.cpp src/examples/Test.h)
 
 
 # The following magic provided to you by Alexander on Discord, to manage libraries.

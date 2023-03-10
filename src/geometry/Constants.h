@@ -6,4 +6,7 @@
 extern double INTERSECTION_TOLERANCE;
 extern Vector3 CROSSPRODUCT_DUMMY;
 
+extern bool isBasicallyZero(double x);
+extern bool isNegativeOrAcne(double t);
+
 #endif //TREASACH_CONSTANTS_H

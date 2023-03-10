@@ -24,7 +24,9 @@ double Sphere::intersect(const Ray &ray) const {
     //      - When the negative is invalid, return the positive.
     //      - When both are invalid (so also the negative), returning either is fine (so also the positive).
     //      - When the negative is valid, return it.
-    bool ignoreNegative = negativeSolution < 0;
+    // Also, because we are comparing t with 0, we must use the acne threshold, not 0.
+    bool ignoreNegative = isNegativeOrAcne(negativeSolution);
+
     return (negativeSolution*(!ignoreNegative) + positiveSolution*ignoreNegative) / (2*a);
 }
 

@@ -10,13 +10,19 @@ class ContinuousColour {
         double green = 0;
         double blue  = 0;
 
+        ContinuousColour();
+        ContinuousColour(double red, double green, double blue);
+
         ContinuousColour operator+(const ContinuousColour& other) const;
         void operator+=(const ContinuousColour& other);
+        ContinuousColour L1normalised() const;
 };
 
+ContinuousColour operator*(const ContinuousColour& c1, const ContinuousColour& c2);
 ContinuousColour operator*(double scalar, const ContinuousColour& c);
+ContinuousColour operator*(const ContinuousColour& c, double scalar);
+ContinuousColour operator/(const ContinuousColour& c, double scalar);
 std::ostream& operator<<(std::ostream& os, const ContinuousColour& c);
-
 
 struct RgbColour {
     uint8_t red   = 0;

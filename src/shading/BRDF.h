@@ -1,14 +1,14 @@
 #ifndef TREASACH_BRDF_H
 #define TREASACH_BRDF_H
 
-#include "../rendering/Tracer.h"
+#include "../rendering/RayTracer.h"
 #include "../scene/Scene.h"
 
 
 class BRDF {
     public:
-        virtual ContinuousColour integrateShadow    (Tracer& tracer, const Scene& scene, const HitInfo& hit) = 0;
-        virtual ContinuousColour integrateHemisphere(Tracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) = 0;
+        virtual ContinuousColour integrateShadow    (RayTracer& tracer, const Scene& scene, const HitInfo& hit) = 0;
+        virtual ContinuousColour integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned recursionsSoFar, double rouletteValue) = 0;
 
         //virtual void generateDirections(const Vector3& p, const Vector3& normal, const Vector3& outgoingRay, std::vector<Vector3>& rays) = 0;
         //virtual double evaluate(const Vector3& p, const Vector3& normal, const Vector3& incomingRay, const Vector3& outgoingRay) = 0;
@@ -17,11 +17,14 @@ class BRDF {
 
 class DiffuseBRDF : public BRDF {
     public:
-        double k_d;
         DiffuseBRDF(double diffuseCoefficient);
+        DiffuseBRDF(double diffuseCoefficient, RgbColour colour);
 
-        ContinuousColour integrateShadow    (Tracer& tracer, const Scene& scene, const HitInfo& hit) override;
-        ContinuousColour integrateHemisphere(Tracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
+        ContinuousColour integrateShadow    (RayTracer& tracer, const Scene& scene, const HitInfo& hit) override;
+        ContinuousColour integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned recursionsSoFar, double rouletteValue) override;
+
+    private:
+        ContinuousColour k_d;
 };
 
 
@@ -31,8 +34,8 @@ class DiffuseBRDF : public BRDF {
  */
 class MirrorBRDF : public BRDF {
     public:
-        ContinuousColour integrateShadow    (Tracer& tracer, const Scene& scene, const HitInfo& hit) override;
-        ContinuousColour integrateHemisphere(Tracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
+        ContinuousColour integrateShadow    (RayTracer& tracer, const Scene& scene, const HitInfo& hit) override;
+        ContinuousColour integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned recursionsSoFar, double rouletteValue) override;
 };
 
 /**
@@ -46,8 +49,8 @@ class MirrorBRDF : public BRDF {
 //        double refractiveIndex;
 //        TransmissionBRDF(double refractiveIndex);
 //
-//        ContinuousColour integrateShadow    (Tracer& tracer, const Scene& scene, const HitInfo& hit) override;
-//        ContinuousColour integrateHemisphere(Tracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
+//        ContinuousColour integrateShadow    (RayTracer& tracer, const Scene& scene, const HitInfo& hit) override;
+//        ContinuousColour integrateHemisphere(RayTracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
 //};
 
 
@@ -72,8 +75,8 @@ class FresnelBRDF : public BRDF {
         double refractiveIndex;  // TODO: Should be stored in the material, not in a BRDF.
         FresnelBRDF(bool opaque, double refractiveIndex);
 
-        ContinuousColour integrateShadow    (Tracer& tracer, const Scene& scene, const HitInfo& hit) override;
-        ContinuousColour integrateHemisphere(Tracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
+        ContinuousColour integrateShadow    (RayTracer& tracer, const Scene& scene, const HitInfo& hit) override;
+        ContinuousColour integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned recursionsSoFar, double rouletteValue) override;
 };
 
 //class GlossyBRDF : public BRDF {
@@ -81,8 +84,8 @@ class FresnelBRDF : public BRDF {
 //        double exponent;
 //        GlossyBRDF(double exponent);
 //
-//        ContinuousColour integrateShadow    (Tracer& tracer, const Scene& scene, const HitInfo& hit) override;
-//        ContinuousColour integrateHemisphere(Tracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
+//        ContinuousColour integrateShadow    (RayTracer& tracer, const Scene& scene, const HitInfo& hit) override;
+//        ContinuousColour integrateHemisphere(RayTracer& tracer, const Scene& scene, const HitInfo& hit, unsigned recursionsSoFar) override;
 //};
 
 

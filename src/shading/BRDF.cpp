@@ -7,10 +7,13 @@
 /**
  * Diffuse
  */
+DiffuseBRDF::DiffuseBRDF(double diffuseCoefficient, RgbColour colour)
+    : k_d(diffuseCoefficient*ContinuousColour((double)colour.red/255, (double)colour.green/255, (double)colour.blue/255)) {}
 
-DiffuseBRDF::DiffuseBRDF(double diffuseCoefficient) : k_d(diffuseCoefficient) {}
+DiffuseBRDF::DiffuseBRDF(double diffuseCoefficient)
+    : DiffuseBRDF(diffuseCoefficient, {255,255,255}) {}
 
-ContinuousColour DiffuseBRDF::integrateShadow(Tracer &tracer, const Scene &scene, const HitInfo &hit) {
+ContinuousColour DiffuseBRDF::integrateShadow(RayTracer &tracer, const Scene &scene, const HitInfo &hit) {
     ContinuousColour totalRadiance;
 
     // If there are no lights, you can't sample any!
@@ -21,7 +24,7 @@ ContinuousColour DiffuseBRDF::integrateShadow(Tracer &tracer, const Scene &scene
     // Recursive raytrace
     //TODO: according to slide 17 at https://courses.grainger.illinois.edu/cs484/sp2020/6_merged.pdf,
     //  the following pragma should parallelise the loop, yet it doesn't seem to do much ...
-    //  #pragma omp parallel for reduction (+:totalRadiance)
+    //#pragma omp parallel for reduction (+:totalRadiance)
     for (int rayIndex = 0; rayIndex < tracer.shadowIntegralSamples; rayIndex++) {
         // Step 1a: Sample light
         SceneObject* light = scene.lights[tracer.rng.randInt(L)];
@@ -34,6 +37,8 @@ ContinuousColour DiffuseBRDF::integrateShadow(Tracer &tracer, const Scene &scene
         // Step 2: Shoot shadowRay to p'
         Vector3 interline = randomPoint - hit.hitpoint;
         Ray shadowRay = Ray(hit.hitpoint, interline, OnlyEmission);
+        if (shadowRay.d * hit.shadingNormal < 0)  // Prematurely stop if it goes through the surface.
+            continue;                             // For closed shapes, this is unnecessary, since the opposing side will block the ray in the visibility check.
 
         // Step 3: Visibility check
         // What follows between "---" is a boiled-down version of tracer.trace(shadowRay). The reason we can't use it is
@@ -48,11 +53,6 @@ ContinuousColour DiffuseBRDF::integrateShadow(Tracer &tracer, const Scene &scene
             continue;
         }
 
-        // FIXME: although the following check is needed for flat objects, I don't understand how there are points on a
-        //        sphere that pass the visibility check yet fail this check.
-        if (shadowRay.d * hit.shadingNormal < 0)
-            continue;
-
         // Step 4: Get the emitted light L_e
         newHit.omega_o                   = -shadowRay.d.normalised();
         newHit.shadingNormal             = light->normal(randomPoint, newHit.omega_o);
@@ -65,14 +65,17 @@ ContinuousColour DiffuseBRDF::integrateShadow(Tracer &tracer, const Scene &scene
         // where V = 1 inside this `if`. Since the PDF here is P(light)*P(p' | light), you can't divide out any of
         // these factors, and have to just divide by the PDF instead.
         // In this, omega_i is the direction from p to p', but you can also use the shadowRay from p' to p.
-        double restOfSummand = -this->k_d/M_PI * (hit.shadingNormal*newHit.omega_o)*(newHit.shadingNormal*newHit.omega_o)/((interline * interline) * discreteProbability*conditionalProbability);
+        ContinuousColour restOfSummand = -M_1_PI * this->k_d * (hit.shadingNormal*newHit.omega_o)*(newHit.shadingNormal*newHit.omega_o)/((interline * interline) * discreteProbability*conditionalProbability);
         totalRadiance += restOfSummand*emittedRadiance;
     }
     return 1.0/tracer.shadowIntegralSamples * totalRadiance;
 }
 
 
-ContinuousColour DiffuseBRDF::integrateHemisphere(Tracer &tracer, const Scene &scene, const HitInfo &hit, unsigned int recursionsSoFar) {
+ContinuousColour DiffuseBRDF::integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned recursionsSoFar, double rouletteValue) {
+    if (tracer.stoppingCriterion(recursionsSoFar, rouletteValue))
+        return {0,0,0};
+
     ContinuousColour totalRadiance;
     for (int i = 0; i < tracer.hemisphericIntegralSamples; i++) {
         // Step 1: Generate random point
@@ -90,22 +93,48 @@ ContinuousColour DiffuseBRDF::integrateHemisphere(Tracer &tracer, const Scene &s
         //                    = pi*BRDF*incomingRadiance
         //                    = k_d*incomingRadiance
         totalRadiance += this->k_d*incomingRadiance;
+        std::cout << "Recursion level: " << recursionsSoFar << "\n";
+        std::cout << "Incoming: " << incomingRadiance << "\n";
+        std::cout << "Total: " << totalRadiance << "\n";
     }
-    return 1.0/tracer.hemisphericIntegralSamples * totalRadiance;
+    return 1.0/(1-tracer.rouletteChanceOfDying) * (1.0/tracer.hemisphericIntegralSamples * totalRadiance);
 }
 
 /**
  * Perfect mirror
  */
-// The perfect mirror has no shadow integral, because it is a hemispheric delta function.
-ContinuousColour MirrorBRDF::integrateShadow(Tracer &tracer, const Scene &scene, const HitInfo &hit) {
+/**
+ * The perfect mirror has no shadow integral, because its BRDF is a hemispheric delta function.
+ *
+ * Like for caustics, this is an strategy that potentially hurts a backwards raytracer. If all the
+ * light in the scene can only be seen via a mirror, clearly the mirror should be treated as if it
+ * was a light source itself.
+ */
+ContinuousColour MirrorBRDF::integrateShadow(RayTracer &tracer, const Scene &scene, const HitInfo &hit) {
     return {0,0,0};
 }
 
-// The ray shot out can see both emitted light and collected light; it copies the entire radiance of the point it hits.
-ContinuousColour MirrorBRDF::integrateHemisphere(Tracer &tracer, const Scene &scene, const HitInfo &hit, unsigned int recursionsSoFar) {
+/**
+ * A couple of notes on this implementation, even if it is short:
+ *  - Why ray type "All"? Because a mirror BRDF is a delta function of the UNSPLIT rendering integral,
+ *    which is 1. hemispheric (hence there is no shadow integral) and 2. contains the FULL incoming radiance,
+ *    both integrated AND L_e. This differs from the diffuse hemispheric integral, which can't see L_e.
+ *    An intuitive explanation is that you otherwise couldn't see lights in a mirror.
+ *  - Why no Russian roulette kill? Because stopping on a mirror causes pepper noise.
+ *  - Why the incrementRecursionDepth rule? It comes down to three things:
+ *      1. Mirrors/refractions are actually way cheaper than a diffuse/Phong integral because they have only 1 ray
+ *         (the "ray tree" doesn't widen), so we should allow them to recurse deeper than the integrals get to recurse.
+ *      2. If you count the mirror bounce as a recursion deeper, the mirror image is less shaded than the actual object
+ *         since you land on the object with e.g. no depth left to do an indirect lighting integral.
+ *      3. You nevertheless need at least some mechanism to prevent infinite bounces between mirrors.
+ */
+ContinuousColour MirrorBRDF::integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned recursionsSoFar, double rouletteValue) {
+    if (tracer.stoppingCriterion(recursionsSoFar, 1.0))  // Still needed for recursion depth maximum.
+        return {0,0,0};
+
     Ray ray = Ray(hit.hitpoint, reflect(hit.shadingNormal, hit.omega_o), All);
-    return tracer.trace(scene, ray, recursionsSoFar+1);
+    bool incrementRecursionDepth = rouletteValue < tracer.rouletteChanceOfDying;  // I invented this.
+    return tracer.trace(scene, ray, recursionsSoFar + incrementRecursionDepth);
 }
 
 
@@ -114,11 +143,10 @@ ContinuousColour MirrorBRDF::integrateHemisphere(Tracer &tracer, const Scene &sc
 //    double R0 = ((n1 - n2)* (n1 - n2))/((n1 + n2)*(n1 + n2));
 //    return R0 + (1 - R0)*(1 - pow(cos_phiO, 5));
 //}
-//
 
 //FresnelBRDF::FresnelBRDF(bool opaque, double refractiveIndex) : opaque(opaque), refractiveIndex(refractiveIndex) {}
 //
-//ContinuousColour FresnelBRDF::integrateShadow(Tracer &tracer, const Scene &scene, const HitInfo &hit) {
+//ContinuousColour FresnelBRDF::integrateShadow(RayTracer &tracer, const Scene &scene, const HitInfo &hit) {
 //    return {0,0,0};
 //}
 //
@@ -126,7 +154,7 @@ ContinuousColour MirrorBRDF::integrateHemisphere(Tracer &tracer, const Scene &sc
 ////  - Also take into account TIR, which medium you go to/come from ...
 ////  - Extra difficult with infinitely thin objects, which can either be standalone or actually be part of a closed object
 ////    (e.g. a cube vs. a plane)
-//ContinuousColour FresnelBRDF::integrateHemisphere(Tracer &tracer, const Scene &scene, const HitInfo &hit, unsigned int recursionsSoFar) {
+//ContinuousColour FresnelBRDF::integrateHemisphere(RayTracer &tracer, const Scene &scene, const HitInfo &hit, unsigned int recursionsSoFar) {
 //    ContinuousColour totalRadiance;
 //
 //    // Reflection

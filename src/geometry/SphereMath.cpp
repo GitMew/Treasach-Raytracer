@@ -57,7 +57,7 @@ double sampleHemisphere(RNG& rng, const Vector3& normal, Vector3& result) {
  *      f(theta,phi) = f(theta)*f(phi)
  * with
  *      f(theta) = 1/2pi
- *      f(phi)   = 2 sin(phi) cos^e(phi)
+ *      f(phi)   = (e+1) sin(phi) cos^e(phi)
  * whose cumulatives are
  *      F(theta) = theta/2pi
  *      F(phi)   = 1 - cos^(1+e)(phi)
@@ -70,7 +70,7 @@ double sampleHemisphereBiased(RNG& rng, const Vector3& normal, Vector3& result, 
     //
     double theta = 2*M_PI*p1;
     double phi   = acos(pow(1-p2, 1.0/(1+exponent)));
-    double pdf   = M_1_PI*sin(phi)*pow(cos(phi), exponent);
+    double pdf   = (exponent+1)/(2*M_PI)*sin(phi)*pow(cos(phi), exponent);
     //
 
     // 2.
